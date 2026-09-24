@@ -4,36 +4,40 @@
 
 # AI Development Harness
 
-**Repository-native workflow для разработки ПО с AI-агентами без потери контекста между сессиями.**
+**Repository-native protocol для разработки ПО с AI-агентами без потери контекста между сессиями.**
 
-Требования, архитектурные решения, задачи, планы реализации, проверки и результаты review живут рядом с кодом — в Git.
+Требования, архитектурные решения, задачи, планы, evidence, review и состояние выполнения живут рядом с кодом — в Git.
 
+[![Release](https://img.shields.io/github/v/release/ai-development-harness/ai-development-harness-template?style=flat-square)](https://github.com/ai-development-harness/ai-development-harness-template/releases/latest)
 [![Template](https://img.shields.io/badge/template-Use%20this%20template-2ea44f?style=flat-square)](https://github.com/ai-development-harness/ai-development-harness-template)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](https://github.com/ai-development-harness/ai-development-harness-template/blob/main/LICENSE)
 [![Website](https://img.shields.io/badge/website-ai--development--harness.ru-black?style=flat-square)](https://ai-development-harness.ru)
 
 [Начать с шаблона](https://github.com/ai-development-harness/ai-development-harness-template) ·
-[Документация](https://github.com/ai-development-harness/ai-development-harness-template/tree/main/docs/harness)
+[Документация](https://github.com/ai-development-harness/ai-development-harness-template/tree/main/.harness/docs) ·
+[Последний релиз](https://github.com/ai-development-harness/ai-development-harness-template/releases/latest)
+
 </div>
 
 ---
 
-## Зачем нужен AI Development Harness
+## Что решает Harness
 
-AI-агент хорошо решает локальную задачу, пока видит достаточный контекст. Проблемы начинаются позже:
+AI-агент хорошо работает, пока видит достаточный контекст. На длинной дистанции возникают другие проблемы:
 
 - новая сессия не знает, почему было принято архитектурное решение;
-- требования остаются в чатах и постепенно расходятся с кодом;
-- план реализации исчезает после завершения диалога;
-- агент может начать работу не с той задачи или расширить scope;
-- review смешивается с implementation и теряет независимость;
-- небольшие изменения либо проходят бесконтрольно, либо обрастают лишней бюрократией;
-- через несколько недель сложно понять, **что было задумано, что реально сделано и чем это доказано**.
+- требования остаются в чатах и расходятся с кодом;
+- план реализации теряется после завершения диалога;
+- агент может выйти за scope или начать не ту задачу;
+- implementation и review смешиваются;
+- после interruption трудно понять, что уже выполнено и откуда продолжать;
+- Git-операции и публикация изменений легко превращаются в отдельный неформальный процесс;
+- через несколько недель сложно доказать, **что было задумано, что сделано и чем это подтверждено**.
 
-**AI Development Harness переносит долговременный контекст из чата в репозиторий.**
+**AI Development Harness переносит долговременный инженерный контекст из чата в репозиторий.**
 
-Чат становится интерфейсом управления.  
-Репозиторий становится памятью проекта и источником истины.
+Чат или UI остаются интерфейсом управления.  
+Git-репозиторий становится долговременной памятью проекта и источником истины.
 
 ---
 
@@ -41,33 +45,66 @@ AI-агент хорошо решает локальную задачу, пок�
 
 ```mermaid
 flowchart LR
-    A["Идея / PROJECT_BRIEF"] -->|"INIT PROJECT"| B["Project Knowledge Base"]
+    A["Идея / PROJECT_BRIEF"] -->|"PROJECT INIT"| B["Project Knowledge Base"]
     B --> C["REQ"]
     B --> D["Architecture / ADR"]
     C --> E["STEP"]
     D --> E
-    E -->|"PLAN"| F["Implementation plan"]
-    F -->|"IMPLEMENT"| G["Code + Tests + Config"]
-    G --> H["Verification / Evidence"]
-    H -->|"REVIEW"| I{"Verdict"}
-    I -->|"PASS"| J["CLOSE"]
-    I -->|"FAIL"| K["FIX"]
+    E -->|"STEP PLAN"| F["Ready plan"]
+    F -->|"STEP IMPLEMENT"| G["Code + Tests + Config"]
+    G --> H["Deterministic Verification + Evidence"]
+    H -->|"STEP REVIEW"| I{"Verdict"}
+    I -->|"PASS"| J["Completed STEP"]
+    I -->|"FAIL"| K["STEP FIX"]
     K --> H
 ```
 
-Harness связывает продуктовые требования, архитектуру и фактическую реализацию:
+Связь артефактов:
 
 ```text
-REQ  → что продукт обязан обеспечивать
-ADR  → почему принято устойчивое архитектурное решение
-STEP → конкретный контракт работы
-PLAN → как STEP будет реализован
-CODE → что реально изменилось
+REQ      → что продукт обязан обеспечивать
+ADR      → почему принято устойчивое архитектурное решение
+STEP     → конкретный контракт работы
+PLAN     → как STEP будет реализован
+CODE     → что фактически изменилось
 EVIDENCE → чем выполнение доказано
-REVIEW → независимая проверка результата
+REVIEW   → независимая проверка результата
 ```
 
-В результате следующая сессия или другой агент может продолжить работу **из состояния репозитория**, без необходимости пересказывать историю предыдущего чата.
+Следующая сессия или другой агент продолжает работу из состояния репозитория, а не из пересказа предыдущего чата.
+
+---
+
+## Что изменилось в актуальном Harness
+
+Современный Harness отделяет **semantic reasoning** от механических и safety-critical операций.
+
+Канонические команды имеют явный namespace:
+
+```text
+PROJECT INIT
+STEP RUN STEP-001
+HARNESS STATUS
+GIT CHECK > COMMIT > PUSH > PR
+```
+
+Допустимые команды и переходы хранятся в machine-readable registry:
+
+```text
+.harness/command-transitions.json
+```
+
+Raw command проходит нормализацию, structural validation и dispatch. Там, где решение можно получить детерминированно, отдельный model turn не используется. Semantic reasoning остаётся там, где действительно нужно понимать intent, код, архитектуру или качество реализации.
+
+В актуальном релизе deterministic tooling отвечает, в частности, за:
+
+- command routing и допустимость chain;
+- состояние и resume незавершённых executions;
+- project status и выбор следующей работы;
+- Verification и фиксацию evidence;
+- safety gates Git-операций;
+- self-update Harness;
+- projections и integrity checks.
 
 ---
 
@@ -75,9 +112,9 @@ REVIEW → независимая проверка результата
 
 ```mermaid
 flowchart TB
-    H["HARNESS / PROTOCOL<br/>AGENTS · commands · skills · policies · CI"]
+    H["HARNESS CONTROL PLANE<br/>commands · policies · validators · deterministic tools · CI"]
     R["RUNTIME ADAPTERS<br/>Codex · Claude Code"]
-    K["PROJECT KNOWLEDGE BASE<br/>PROJECT · REQ · ADR · architecture · STEP"]
+    K["PROJECT KNOWLEDGE BASE<br/>PROJECT · REQ · ADR · OQ · STEP"]
     I["IMPLEMENTATION<br/>code · tests · migrations · runtime config"]
 
     H --> R
@@ -86,17 +123,17 @@ flowchart TB
     I -. "evidence / actual state" .-> K
 ```
 
-### 1. Harness / Protocol
+### 1. Harness control plane
 
-Постоянные правила работы AI-агентов:
+Основные protocol-файлы живут в `.harness/**`:
 
-- repository-level инструкции;
-- команды Harness;
-- канонические роли;
-- Git policy;
+- manifest и policy;
+- command transition graph;
 - execution protocol;
-- CI / integrity checks;
-- runtime-neutral repository skills.
+- validators;
+- deterministic command/Git/update tooling;
+- локальное operational state;
+- документация Harness.
 
 ### 2. Runtime adapters
 
@@ -107,24 +144,25 @@ Harness protocol не привязан к одному coding agent или од�
 - **Codex** — `.codex/config.toml` + `.codex/agents/*.toml`;
 - **Claude Code** — `CLAUDE.md` + `.claude/settings.json` + `.claude/agents/*.md`.
 
-`AGENTS.md`, execution protocol, REQ/ADR/STEP и `.agents/skills/` остаются общими источниками истины. Runtime adapter задаёт model/effort/permissions конкретной роли, но не меняет семантику Harness.
+`AGENTS.md`, REQ/ADR/STEP, execution protocol и `.agents/skills/` остаются общими источниками истины.
 
 ### 3. Project Knowledge Base
 
-Долговременная память конкретного проекта:
+Долговременная память проекта:
 
 - описание проекта;
-- требования;
-- архитектурный baseline;
+- REQ;
+- architecture baseline;
 - ADR;
-- открытые вопросы;
+- OQ;
 - roadmap;
-- STEP-файлы;
-- результаты review, audit и release checks.
+- STEP;
+- review/audit/release reports;
+- deterministic PLAN/STATUS projections.
 
 ### 4. Implementation
 
-Обычный production-код проекта:
+Обычная production-кодовая база:
 
 - приложение;
 - тесты;
@@ -132,7 +170,20 @@ Harness protocol не привязан к одному coding agent или од�
 - конфигурация;
 - инфраструктура.
 
-Harness не заменяет кодовую базу — он создаёт вокруг неё управляемый процесс работы AI-агентов.
+Harness не заменяет кодовую базу — он задаёт воспроизводимый процесс работы вокруг неё.
+
+---
+
+## Требования
+
+Для актуального Harness нужны:
+
+- **Git**;
+- **Python 3.11+** для deterministic tools и validators;
+- **Codex или Claude Code** как runtime agent-session;
+- **GitHub CLI `gh`** — только для текущей GitHub Pull Request capability: `GIT PR` и `GIT PR FINISH`.
+
+Отсутствие `gh` не блокирует Harness целиком: Git workflow без PR остаётся доступен.
 
 ---
 
@@ -146,270 +197,314 @@ Harness не заменяет кодовую базу — он создаёт в
 
 и нажми **Use this template**.
 
-### 2. Создай локальный brief
+### 2. Создай local brief
 
 ```bash
 cp PROJECT_BRIEF.example.md PROJECT_BRIEF.local.md
 ```
 
-Опиши проект обычным языком:
+Опиши проект обычным языком: цель, пользователей, сценарии, ограничения, предпочтительный стек, референсы и важные заметки.
 
-- что нужно создать;
-- кто будет этим пользоваться;
-- ключевые сценарии;
-- ограничения;
-- желательный стек;
-- что не входит в scope;
-- ссылки на документацию, API, дизайн и референсы.
+`PROJECT_BRIEF.local.md` — local-only файл и не должен попадать в Git.
 
-Не нужно вручную писать REQ, ADR или STEP.
+### 3. При необходимости настрой Harness
 
-### 3. Запусти bootstrap
-
-Открой проект в **Codex** или **Claude Code** и выполни:
+До инициализации можно изменить project-configurable параметры в:
 
 ```text
-INIT PROJECT
+.harness/manifest.yaml
 ```
 
-Initializer создаст project knowledge base, требования, архитектурный baseline, roadmap и первые STEP, но **не начнёт писать production-код**.
+В том числе язык, пути project knowledge, лимит FIX ↔ REVIEW, policy specialized reviewers и другие настройки.
 
-### 4. Проверь состояние
+### 4. Инициализируй проект
+
+Открой repository в Codex или Claude Code и выполни:
 
 ```text
-STATUS PROJECT
-NEXT STEP
+PROJECT INIT
 ```
 
-### 5. Запусти разработку
+Initializer создаёт project knowledge base, REQ, architecture baseline, ADR/OQ при необходимости, roadmap и STEP, выполняет semantic checks и deterministic validation, но **не пишет production-код**.
 
-Полный автоматизированный flow:
+### 5. Проверь состояние
 
 ```text
-RUN STEP-001
+PROJECT STATUS
+STEP NEXT
+```
+
+### 6. Запусти разработку
+
+Полный orchestrated flow:
+
+```text
+STEP RUN STEP-001
 ```
 
 Или вручную:
 
 ```text
-PLAN STEP-001
-IMPLEMENT STEP-001
-REVIEW STEP-001
+STEP PLAN STEP-001
+STEP IMPLEMENT STEP-001
+STEP REVIEW STEP-001
 ```
 
 ---
 
-## Основные команды
+## Канонические команды
 
-| Команда | Назначение |
-|---|---|
-| `INIT PROJECT` | Инициализировать проект из локального brief |
-| `ADD STEP: <описание>` | Превратить новую задачу в полноценный STEP |
-| `PLAN STEP-NNN` | Сохранить технический план реализации |
-| `IMPLEMENT STEP-NNN` | Реализовать STEP в рамках зафиксированного scope |
-| `REVIEW STEP-NNN` | Провести независимый review |
-| `FIX STEP-NNN` | Исправить подтверждённые findings |
-| `RUN STEP-NNN` | Выполнить orchestrated PLAN → IMPLEMENT → REVIEW → FIX → CLOSE |
-| `AUDIT STEP-NNN` | Проверить фактическое состояние без production mutation |
-| `QUICK FIX: <описание>` | Сделать безопасную micro-change без лишнего STEP |
-| `STATUS PROJECT` | Проверить состояние проекта и drift |
-| `NEXT STEP` | Выбрать следующий unblocked STEP |
-| `RECONCILE PROJECT` | Сверить документацию с фактическим состоянием кода |
-| `RELEASE CHECK` | Выполнить финальные release-oriented проверки |
-| `CHECK HARNESS UPDATE [TO <tag>]` | Read-only проверить допустимый маршрут обновления Harness |
-| `UPDATE HARNESS [TO <tag>]` | Применить проверенный self-update protocol layer hop-by-hop |
-| `FIND SKILL: <описание>` | Найти подходящий Agent Skill |
-| `INSTALL SKILL: <source \| #N>` | Безопасно установить выбранный skill |
-| `CREATE SKILL: <описание>` | Создать project-native skill |
-| `GENERATE GITHUB TEMPLATES` | Пересоздать Issue Forms и PR template под текущий проект |
-| `GIT CHECK` | Выполнить безопасный Git preflight |
-| `COMMIT` | Создать проверенный локальный commit |
-| `PUSH` | Без force опубликовать текущую ветку |
-| `PR` | Создать или вернуть существующий Pull Request |
-| `SYNC` | Проверить divergence и безопасно синхронизироваться |
+Команды сгруппированы по областям. Полным source of truth является `.harness/command-transitions.json`.
 
-Полное описание команд:  
-[`docs/harness/COMMANDS.md`](https://github.com/ai-development-harness/ai-development-harness-template/blob/main/docs/harness/COMMANDS.md)
+| Область | Команда | Назначение |
+|---|---|---|
+| HARNESS | `HARNESS HELP` | Показать актуальную справку по command surface |
+| HARNESS | `HARNESS STATUS` | Показать состояние Harness, Git и незавершённых executions |
+| HARNESS | `HARNESS RESUME` | Продолжить единственное безопасно возобновляемое выполнение |
+| HARNESS | `HARNESS DOCTOR` | Проверить required dependencies и health Harness |
+| HARNESS | `HARNESS CONFIG` | Показать effective configuration и её источники |
+| HARNESS | `HARNESS UPDATE CHECK [TO <tag>]` | Read-only проверить допустимый маршрут обновления |
+| HARNESS | `HARNESS UPDATE APPLY [TO <tag>]` | Применить проверенное обновление Harness |
+| PROJECT | `PROJECT INIT` | Инициализировать проект из local brief |
+| PROJECT | `PROJECT STATUS` | Пересобрать projections и показать состояние проекта |
+| PROJECT | `PROJECT RECONCILE` | Сверить project knowledge с фактическим состоянием repository |
+| PROJECT | `PROJECT QUICK FIX: <описание>` | Выполнить маленькую low-risk правку без STEP |
+| STEP | `STEP ADD: <описание>` | Создать новый STEP из краткого описания |
+| STEP | `STEP LIST` | Показать компактный список STEP |
+| STEP | `STEP SHOW STEP-NNN` | Показать состояние и контекст одного STEP |
+| STEP | `STEP NEXT` | Детерминированно рекомендовать следующую доступную работу |
+| STEP | `STEP PLAN STEP-NNN` | Подготовить и независимо проверить план |
+| STEP | `STEP IMPLEMENT STEP-NNN` | Реализовать Ready plan |
+| STEP | `STEP REVIEW STEP-NNN` | Провести независимый review exact revision |
+| STEP | `STEP FIX STEP-NNN` | Исправить подтверждённые findings |
+| STEP | `STEP RUN STEP-NNN` | Оркестрировать PLAN → IMPLEMENT → REVIEW → FIX |
+| STEP | `STEP AUDIT STEP-NNN` | Провести formal audit без production mutation |
+| SKILL | `SKILL FIND: <описание>` | Найти подходящие Agent Skills |
+| SKILL | `SKILL INSTALL: <source \| #N>` | Проверить и установить выбранный skill |
+| SKILL | `SKILL CREATE: <описание>` | Создать project-native skill |
+| GITHUB | `GITHUB GENERATE TEMPLATES` | Пересоздать Issue Forms и PR template под проект |
+| RELEASE | `RELEASE CHECK` | Провести release-oriented проверку |
+| GIT | `GIT CHECK` | Выполнить deterministic Git preflight |
+| GIT | `GIT COMMIT[: <подсказка>]` | Создать проверенный локальный commit |
+| GIT | `GIT PUSH` | Без force опубликовать текущую ветку |
+| GIT | `GIT PR` | Создать или переиспользовать Pull Request |
+| GIT | `GIT PR FINISH` | Безопасно завершить local branch lifecycle после merge |
+| GIT | `GIT SYNC` | Проверить divergence или выполнить разрешённый ff-only sync |
 
----
-
-## Почему не просто `AGENTS.md` и хороший prompt
-
-Harness решает более широкую задачу.
-
-Хорошие инструкции помогают агенту работать **сейчас**.  
-Harness помогает проекту сохранять инженерную целостность **между сессиями, агентами и этапами разработки**.
-
-| Только prompt / инструкции | AI Development Harness |
-|---|---|
-| Контекст часто живёт в чате | Контекст сохраняется в Git |
-| План может исчезнуть после сессии | План хранится внутри STEP |
-| Требования легко потерять | REQ являются отдельными контрактами |
-| Architecture decisions остаются неформальными | Устойчивые решения фиксируются ADR |
-| Reviewer может повторять логику implementer | Review выделен в независимый этап |
-| Статус проекта приходится восстанавливать | PLAN / STATUS строятся из канонических данных |
-| Новая сессия требует пересказа | Durable handoff хранится в репозитории |
+Полное описание:  
+[COMMANDS.md](https://github.com/ai-development-harness/ai-development-harness-template/blob/main/.harness/docs/COMMANDS.md)
 
 ---
 
-## Traceability вместо «поверь, что готово»
+## Цепочки команд
 
-Harness разделяет разные типы знания и связывает их между собой:
+Для разрешённых команд одной области namespace можно не повторять:
 
-```mermaid
-flowchart TD
-    PROJECT["Project"] --> REQ["REQ"]
-    PROJECT --> ARCH["Architecture"]
-    ARCH --> ADR["ADR"]
-    REQ --> STEP["STEP"]
-    ADR --> STEP
-    STEP --> PLAN["Implementation plan"]
-    PLAN --> CODE["Code / Tests / Config"]
-    CODE --> EVIDENCE["Evidence"]
-    EVIDENCE --> REVIEW["Independent Review"]
-    REVIEW --> STEP
+```text
+GIT CHECK > COMMIT > PUSH > PR
+STEP PLAN STEP-024 > IMPLEMENT > REVIEW
+HARNESS UPDATE CHECK TO vX.X.X > APPLY
 ```
 
-STEP не считается завершённым только потому, что агент написал «готово».
+Вся цепочка сначала проверяется по `.harness/command-transitions.json`. Недопустимый порядок отклоняется **до выполнения первого сегмента**.
 
-Acceptance criteria должны подтверждаться проверками, артефактами и review evidence.
+Cross-domain chain не является допустимой командой:
+
+```text
+STEP RUN STEP-024 > GIT COMMIT
+```
+
+Git-публикацию после STEP нужно запускать отдельной командой/цепочкой.
+
+---
+
+## Независимый review и deterministic Verification
+
+Одна из базовых идей Harness — implementer не должен сам подтверждать корректность собственной реализации.
+
+Типичный coding flow:
+
+```text
+STEP PLAN
+    ↓
+STEP IMPLEMENT
+    ↓
+deterministic Verification
+    ↓
+generated Evidence
+    ↓
+STEP REVIEW
+    ↓
+PASS ──────────────→ completed
+ │
+ FAIL
+ ↓
+STEP FIX
+ ↓
+Verification
+ ↓
+STEP REVIEW
+```
+
+Review создаёт immutable report и относится к exact repository revision.
+
+Лимит FIX → REVIEW настраивается в `.harness/manifest.yaml`:
+
+```yaml
+execution:
+  maxFixReviewCycles: 3
+```
+
+Допустимый диапазон — 1..5.
+
+---
+
+## Resume после interruption
+
+Operational state хранится локально:
+
+```text
+.harness/local/execution/execution-status.json
+```
+
+Он не является project evidence и не коммитится.
+
+Если session/process оборвался, Harness умеет продолжить незавершённое выполнение:
+
+```text
+HARNESS STATUS
+HARNESS RESUME
+```
+
+`STEP RUN STEP-NNN` также использует crash-safe execution state и не должен создавать второй параллельный root execution для уже выполняющегося STEP.
 
 ---
 
 ## Маленькие изменения без бюрократии
 
-Не каждая опечатка заслуживает отдельного процесса.
+Не каждая опечатка требует отдельного STEP.
 
-Для безопасных micro-changes существует:
+Для безопасной micro-change:
 
 ```text
-QUICK FIX: исправить опечатку в тексте ошибки
+PROJECT QUICK FIX: исправить опечатку в тексте ошибки
 ```
 
-`QUICK FIX` разрешён только когда изменение не затрагивает:
+Quick Fix допустим только если изменение не меняет product/API/data/security/architecture/dependencies. Если scope оказывается больше, flow должен остановиться и перейти к полноценному `STEP ADD:`.
 
-- product contract;
-- API;
-- data model;
-- security;
-- архитектуру;
-- зависимости.
+Если мелкая правка уже внесена вручную, можно перейти сразу к Git workflow:
 
-Если изменение оказывается больше ожидаемого, Harness должен остановить quick-flow и предложить полноценный `ADD STEP`.
+```text
+GIT CHECK > COMMIT
+```
 
 ---
 
-## Независимый review
+## Git — часть protocol
 
-Одна из ключевых идей Harness — **implementer не должен сам подтверждать корректность собственной реализации**.
+Harness отделяет разработку от публикации. `STEP IMPLEMENT` и `STEP REVIEW` не создают commits автоматически.
 
-Типичный `RUN STEP-NNN`:
-
-```text
-PLAN
-  ↓
-IMPLEMENT
-  ↓
-deterministic verification
-  ↓
-REVIEW
-  ↓
-PASS ───────────────→ CLOSE
-  │
- FAIL
-  ↓
-FIX
-  ↓
-REVIEW
-```
-
-Review создаёт отдельный immutable report и возвращает один из verdict:
-
-- `PASS`
-- `FAIL`
-- `BLOCKED`
-
-Это делает состояние проекта проверяемым и пригодным для handoff между агентами.
-
----
-
-## Git тоже часть protocol
-
-Harness управляет не только кодированием, но и безопасным переходом изменений в Git:
+Обычная публикация:
 
 ```text
 GIT CHECK
    ↓
-COMMIT
+GIT COMMIT
    ↓
-PUSH
+GIT PUSH
    ↓
-PR
+GIT PR
 ```
 
-Политика хранится в проекте, а не в памяти текущего диалога.
+Короткая форма:
 
-Harness проверяет рабочую копию, branch policy, divergence, suspicious files и integrity перед потенциально изменяющими Git-операциями.
+```text
+GIT CHECK > COMMIT > PUSH > PR
+```
+
+После merge:
+
+```text
+GIT PR FINISH
+```
+
+Safety-critical решения — protected branch, divergence, force prohibition, ff-only sync, PR state и другие gates — проверяются deterministic tooling.
+
+По умолчанию Harness не делает автоматически:
+
+- force push;
+- hard reset;
+- destructive clean;
+- merge/rebase конфликтующей истории;
+- commit amend;
+- staging подозрительных или несвязанных файлов.
 
 ---
 
-## Обновление самого Harness
+## Обновление Harness в существующем проекте
 
-Проекты, уже созданные из template, могут обновлять protocol layer без повторной инициализации проекта:
+Проект можно обновлять без повторного `PROJECT INIT`.
 
 ```text
-CHECK HARNESS UPDATE
+HARNESS UPDATE CHECK
         ↓
 inspect route / conflicts
         ↓
-UPDATE HARNESS
+HARNESS UPDATE APPLY
         ↓
 inspect diff
         ↓
-GIT CHECK → COMMIT
+GIT CHECK > COMMIT
 ```
 
-Self-update использует immutable release tags, `.project/harness.lock.json` как известный BASE, `.project/harness-update.toml` как ownership/merge policy и `.project/harness-update-graph.json` как граф допустимых release hops.
+Или одной разрешённой chain:
 
-`CHECK HARNESS UPDATE` ничего не меняет. `UPDATE HARNESS` применяется только после успешной проверки того же target/route, не выполняет commit/push/PR и останавливается на blocker или обязательной reload boundary.
+```text
+HARNESS UPDATE CHECK > APPLY
+```
+
+Self-update использует immutable release tags, ownership policy и 3-way merge для shared-файлов.
+
+Основные paths по умолчанию:
+
+```text
+.harness/harness.lock.json
+.harness/harness-update-graph.json
+.harness/harness-update.toml
+planning/harness-updates/
+```
+
+Update меняет protocol layer, но не переписывает project-owned REQ/ADR/STEP/OQ и production code. Если новый release требует migration активных project artifacts, после update используется:
+
+```text
+PROJECT RECONCILE
+```
 
 ---
 
 ## Skills без слепой установки
 
-Проект может расширять возможности агентов через repository skills.
-
 ```text
-FIND SKILL: <что требуется>
+SKILL FIND: <что требуется>
         ↓
 inspect / compare / provenance / safety
         ↓
-INSTALL SKILL: #N
+SKILL INSTALL: #N
 ```
 
 Если подходящего готового skill нет:
 
 ```text
-CREATE SKILL: <описание>
+SKILL CREATE: <описание>
 ```
 
-Сторонний skill рассматривается как **недоверенный внешний контент**: Harness сначала инспектирует его происхождение и содержимое и только затем допускает установку.
+Сторонний skill рассматривается как недоверенный внешний контент: Harness сначала проверяет источник, содержимое и риски, а затем допускает установку.
 
 ---
 
-## Репозитории организации
+## Структура template
 
-| Репозиторий | Назначение |
-|---|---|
-| [`ai-development-harness-template`](https://github.com/ai-development-harness/ai-development-harness-template) | Основной template и источник истины для Harness protocol |
-| [`website`](https://github.com/ai-development-harness/website) | Публичный сайт и документация проекта |
-| [`ai-development-harness-client`](https://github.com/ai-development-harness/ai-development-harness-client) | Отдельный клиент/UI для работы с Harness-проектами |
-| [`ai-development-harness-vscode-extension`](https://github.com/ai-development-harness/ai-development-harness-vscode-extension) | VS Code extension / IDE-слой над Harness |
-| [`maintainer-tools`](https://github.com/ai-development-harness/maintainer-tools) | Maintainer-only control plane и release tooling самого Harness |
-
-### Основной template
-
-[`ai-development-harness-template`](https://github.com/ai-development-harness/ai-development-harness-template) содержит:
+Упрощённо актуальная структура выглядит так:
 
 ```text
 .
@@ -417,33 +512,80 @@ CREATE SKILL: <описание>
 ├── AGENTS.md
 ├── CLAUDE.md
 ├── PROJECT_BRIEF.example.md
-├── .project/
+├── .harness/
 │   ├── manifest.yaml
+│   ├── command-transitions.json
 │   ├── harness.lock.json
 │   ├── harness-update-graph.json
 │   ├── harness-update.toml
 │   ├── harness-policy.toml
-│   └── git-policy.toml
+│   ├── git-policy.toml
+│   ├── docs/
+│   ├── tools/
+│   └── local/
+├── .agents/skills/
 ├── .codex/
 ├── .claude/
-├── .agents/skills/
 ├── docs/
+│   ├── PROJECT.md
+│   ├── architecture.md
 │   ├── requirements/
 │   ├── adr/
-│   ├── skills/
-│   └── harness/
+│   ├── open-questions/
+│   └── skills/
 ├── planning/
+│   ├── PLAN.md
+│   ├── STATUS.md
 │   ├── tasks/
 │   ├── reviews/
+│   ├── plan-reviews/
+│   ├── init-reviews/
 │   ├── audits/
 │   ├── releases/
 │   ├── harness-updates/
 │   └── skill-searches/
-├── tools/harness/
 └── .github/
 ```
 
+Физические `docs/**` и `planning/**` — default layout. Project topology настраивается через `.harness/manifest.yaml`; core tooling не должен считать default paths скрытым вторым source of truth.
+
 Product implementation намеренно отсутствует в template и появляется уже в конкретном проекте.
+
+---
+
+## Репозитории организации
+
+| Репозиторий | Назначение |
+|---|---|
+| [`ai-development-harness-template`](https://github.com/ai-development-harness/ai-development-harness-template) | Основной template и источник истины Harness protocol |
+| [`website`](https://github.com/ai-development-harness/website) | Публичный сайт проекта |
+| [`ai-development-harness-client`](https://github.com/ai-development-harness/ai-development-harness-client) | Локальный browser-first UI для работы с Harness |
+| [`ai-development-harness-vscode-extension`](https://github.com/ai-development-harness/ai-development-harness-vscode-extension) | Развиваемый IDE-слой/расширение VS Code над Harness |
+| [`vscode-harness-navigator`](https://github.com/ai-development-harness/vscode-harness-navigator) | Read-only VS Code Navigator для артефактов и справки Harness |
+| [`maintainer-tools`](https://github.com/ai-development-harness/maintainer-tools) | Maintainer control plane и release tooling |
+| [`.github`](https://github.com/ai-development-harness/.github) | Публичный профиль GitHub-организации |
+
+---
+
+## Документация
+
+Начать лучше отсюда:
+
+- [Начало работы](https://github.com/ai-development-harness/ai-development-harness-template/blob/main/.harness/docs/GETTING_STARTED.md)
+- [Команды Harness](https://github.com/ai-development-harness/ai-development-harness-template/blob/main/.harness/docs/COMMANDS.md)
+- [Синтаксис команд и chains](https://github.com/ai-development-harness/ai-development-harness-template/blob/main/.harness/docs/COMMAND_SYNTAX.md)
+- [Таблица допустимых переходов](https://github.com/ai-development-harness/ai-development-harness-template/blob/main/.harness/docs/COMMAND_TRANSITIONS.md)
+- [Execution Protocol](https://github.com/ai-development-harness/ai-development-harness-template/blob/main/.harness/docs/EXECUTION_PROTOCOL.md)
+- [Модель документации и traceability](https://github.com/ai-development-harness/ai-development-harness-template/blob/main/.harness/docs/DOCUMENT_MODEL.md)
+- [Структура репозитория](https://github.com/ai-development-harness/ai-development-harness-template/blob/main/.harness/docs/REPOSITORY_LAYOUT.md)
+- [Зависимости](https://github.com/ai-development-harness/ai-development-harness-template/blob/main/.harness/docs/DEPENDENCIES.md)
+- [Настройка агентов и моделей](https://github.com/ai-development-harness/ai-development-harness-template/blob/main/.harness/docs/AGENT_CONFIGURATION.md)
+- [Claude Code adapter](https://github.com/ai-development-harness/ai-development-harness-template/blob/main/.harness/docs/CLAUDE_CODE.md)
+- [Обновление Harness](https://github.com/ai-development-harness/ai-development-harness-template/blob/main/.harness/docs/UPDATES.md)
+- [Git workflow](https://github.com/ai-development-harness/ai-development-harness-template/blob/main/.harness/docs/GIT_WORKFLOW.md)
+- [CI и Harness Integrity](https://github.com/ai-development-harness/ai-development-harness-template/blob/main/.harness/docs/CI.md)
+- [Управление Skills](https://github.com/ai-development-harness/ai-development-harness-template/blob/main/.harness/docs/SKILL_MANAGEMENT.md)
+- [Полное оглавление](https://github.com/ai-development-harness/ai-development-harness-template/blob/main/.harness/docs/README.md)
 
 ---
 
@@ -453,71 +595,25 @@ Product implementation намеренно отсутствует в template и 
 Важный контекст должен переживать текущую сессию.
 
 **Explicit contracts**  
-Требования и задачи должны быть проверяемыми, а не подразумеваемыми.
+REQ и STEP должны быть проверяемыми, а не подразумеваемыми.
 
 **Traceability**  
-REQ, ADR, STEP, implementation и evidence должны быть связаны.
+REQ, ADR, STEP, implementation, evidence и review связаны между собой.
+
+**Deterministic where possible**  
+Механические, routing- и safety-critical решения не должны зависеть от свободной интерпретации модели.
 
 **No invented decisions**  
-Неизвестность фиксируется как вопрос или research task, а не маскируется выдуманным ADR.
+Неизвестность фиксируется как OQ, research или prerequisite work, а не маскируется выдуманным ADR.
 
 **Independent review**  
-Реализация и проверка разделены.
+Реализация и подтверждение корректности разделены.
 
-**Actual state matters**  
-Код, тесты, migrations и config учитываются как фактическое состояние системы.
+**Crash-safe execution**  
+Незавершённое выполнение можно продолжить из durable operational state.
 
 **Small changes stay small**  
-Micro-change не должна превращаться в бюрократический ритуал.
+Micro-change не должна превращаться в лишний процесс.
 
 **Safe automation**  
-Автоматизация должна останавливаться на blocker, а не скрывать failure.
-
----
-
-## Документация
-
-Начать лучше отсюда:
-
-- [Начало работы](https://github.com/ai-development-harness/ai-development-harness-template/blob/main/docs/harness/GETTING_STARTED.md)
-- [Модель документации и traceability](https://github.com/ai-development-harness/ai-development-harness-template/blob/main/docs/harness/DOCUMENT_MODEL.md)
-- [Команды Harness](https://github.com/ai-development-harness/ai-development-harness-template/blob/main/docs/harness/COMMANDS.md)
-- [Структура репозитория](https://github.com/ai-development-harness/ai-development-harness-template/blob/main/docs/harness/REPOSITORY_LAYOUT.md)
-- [Настройка агентов и моделей](https://github.com/ai-development-harness/ai-development-harness-template/blob/main/docs/harness/AGENT_CONFIGURATION.md)
-- [Claude Code adapter](https://github.com/ai-development-harness/ai-development-harness-template/blob/main/docs/harness/CLAUDE_CODE.md)
-- [Обновление Harness](https://github.com/ai-development-harness/ai-development-harness-template/blob/main/docs/harness/UPDATES.md)
-- [Git workflow](https://github.com/ai-development-harness/ai-development-harness-template/blob/main/docs/harness/GIT_WORKFLOW.md)
-- [CI и Harness Integrity](https://github.com/ai-development-harness/ai-development-harness-template/blob/main/docs/harness/CI.md)
-- [Управление Skills](https://github.com/ai-development-harness/ai-development-harness-template/blob/main/docs/harness/SKILL_MANAGEMENT.md)
-
----
-
-## Статус проекта
-
-AI Development Harness активно развивается.
-
-Текущая цель — сформировать воспроизводимый repository-native protocol, который помогает AI coding agents работать над реальными проектами на длинной дистанции: от первичного brief до implementation, review, reconciliation и release checks.
-
-Обратная связь, реальные сценарии использования и предложения по улучшению приветствуются через Issues основного репозитория.
-
----
-
-## Лицензия
-
-Основной template распространяется по лицензии **MIT**.
-
-См. [`LICENSE`](https://github.com/ai-development-harness/ai-development-harness-template/blob/main/LICENSE).
-
----
-
-<div align="center">
-
-### AI Development Harness
-
-**Чат управляет работой. Репозиторий хранит память. Git фиксирует историю.**
-
-[Use this template](https://github.com/ai-development-harness/ai-development-harness-template) ·
-[Documentation](https://github.com/ai-development-harness/ai-development-harness-template/tree/main/docs/harness) ·
-[Website](https://ai-development-harness.ru)
-
-</div>
+Automation должна останавливаться на blocker, а не скрывать failure.
