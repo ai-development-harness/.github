@@ -257,7 +257,7 @@ STEP REVIEW STEP-001
 Команды сгруппированы по областям. Полным source of truth является `.harness/command-transitions.json`.
 
 | Область | Команда | Назначение |
-|---|---|---|
+| --- | --- | --- |
 | HARNESS | `HARNESS HELP` | Показать актуальную справку по command surface |
 | HARNESS | `HARNESS STATUS` | Показать состояние Harness, Git и незавершённых executions |
 | HARNESS | `HARNESS RESUME` | Продолжить единственное безопасно возобновляемое выполнение |
@@ -556,7 +556,7 @@ Product implementation намеренно отсутствует в template и 
 ## Репозитории организации
 
 | Репозиторий | Назначение |
-|---|---|
+| --- | --- |
 | [`ai-development-harness-template`](https://github.com/ai-development-harness/ai-development-harness-template) | Основной template и источник истины Harness protocol |
 | [`website`](https://github.com/ai-development-harness/website) | Публичный сайт проекта |
 | [`ai-development-harness-client`](https://github.com/ai-development-harness/ai-development-harness-client) | Локальный browser-first UI для работы с Harness |
