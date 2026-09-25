@@ -361,22 +361,25 @@ execution:
 
 ## Resume после interruption
 
-Operational state хранится локально:
+Execution Status — общий crash-safe operational layer для **всех canonical Harness-команд**, а не только для `STEP RUN`.
+
+Состояние хранится локально:
 
 ```text
 .harness/local/execution/execution-status.json
+.harness/local/execution/execution-status.lock
 ```
 
-Он не является project evidence и не коммитится.
+Оно не является project evidence и не коммитится. Read-modify-write операции сериализуются advisory lock, а local schema автоматически мигрируется и компактизируется: активные/recoverable executions сохраняются полностью, terminal history остаётся bounded.
 
-Если session/process оборвался, Harness умеет продолжить незавершённое выполнение:
+Если session/process оборвался, Harness умеет найти безопасную точку продолжения:
 
 ```text
 HARNESS STATUS
 HARNESS RESUME
 ```
 
-`STEP RUN STEP-NNN` также использует crash-safe execution state и не должен создавать второй параллельный root execution для уже выполняющегося STEP.
+Параллельные sessions не должны затирать execution state друг друга. Во время активной update-транзакции тот же concurrency boundary блокирует новые canonical mutations до commit/rollback recovery.
 
 ---
 
@@ -430,6 +433,8 @@ GIT PR FINISH
 
 Safety-critical решения — protected branch, divergence, force prohibition, ff-only sync, PR state и другие gates — проверяются deterministic tooling.
 
+Для `GIT COMMIT` validated snapshot фиксируется **до mutation**, а после commit Harness повторно проверяет фактические branch/parent/tree. Git hooks выполняются штатно, но их неожиданные изменения не считаются автоматически доверенными: Harness пытается компенсировать только доказанно принадлежащую ему ref-mutation и в неоднозначной ситуации остаётся fail-closed. Разрушительный `reset --hard` для recovery не используется.
+
 По умолчанию Harness не делает автоматически:
 
 - force push;
@@ -463,7 +468,15 @@ GIT CHECK > COMMIT
 HARNESS UPDATE CHECK > APPLY
 ```
 
-Self-update использует immutable release tags, ownership policy и 3-way merge для shared-файлов.
+Self-update использует immutable release tags, ownership policy и 3-way merge для shared-файлов. Каждый update hop выполняется как отдельная crash-safe транзакция с journal:
+
+```text
+.harness/local/update-journal/
+```
+
+До первой записи engine сохраняет backup затрагиваемых managed paths, lock и local execution state. Durable `UPDATE-*.md` публикуется только после PASS target validator. Commit/rollback boundary фиксируется атомарно; при crash незавершённый journal остаётся на диске, `HARNESS UPDATE CHECK` сообщает pending recovery, а следующий `HARNESS UPDATE APPLY` сначала безопасно восстанавливает прерванный hop и только затем продолжает update.
+
+Rollback восстанавливает содержимое и permission bits, удаляет только доказанно принадлежащие транзакции новые artifacts и не должен повреждать параллельное или чужое состояние.
 
 Основные paths по умолчанию:
 

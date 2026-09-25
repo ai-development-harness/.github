@@ -21,6 +21,8 @@ REQUIRED_SNIPPETS = (
     "GIT CHECK > COMMIT > PUSH > PR",
     ".harness/command-transitions.json",
     ".harness/manifest.yaml",
+    ".harness/local/execution/execution-status.lock",
+    ".harness/local/update-journal/",
 )
 
 FORBIDDEN_SNIPPETS = (
